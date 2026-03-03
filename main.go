@@ -305,8 +305,8 @@ func handleCatracaConnect(w http.ResponseWriter, r *http.Request) {
 	// Iniciar listener em background
 	go henryClient.Listen()
 
-	// Sincronizar relógio
-	henryClient.SetDateTime()
+	// Não sincronizar relógio automaticamente no connect.
+	// Alguns firmwares encerram a sessão quando recebem EH logo no handshake.
 
 	// Salvar IP/Porta para reconexão automática
 	SetSetting("catraca_ip", data.IP)

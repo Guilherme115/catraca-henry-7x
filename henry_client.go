@@ -67,6 +67,10 @@ func (h *HenryClient) Connect() error {
 	}
 
 	h.conn = conn
+	if tcpConn, ok := conn.(*net.TCPConn); ok {
+		tcpConn.SetKeepAlive(true)
+		tcpConn.SetKeepAlivePeriod(20 * time.Second)
+	}
 	h.connected = true
 	fmt.Printf("🔗 [HENRY CLIENT] Conectado à catraca em %s\n", addr)
 	return nil
