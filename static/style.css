@@ -1,0 +1,458 @@
+:root {
+    --bg: #f8f9fa;
+    --card-bg: #ffffff;
+    --text: #000000;
+    --border: #000000;
+    --accent: #ff2a2a;
+    /* Vermelho vibrante Neobrutalista */
+    --accent-hover: #d91c1c;
+    --success: #00e676;
+    /* Verde cru para UX de sucesso */
+    --shadow-offset: 6px;
+    --border-width: 3px;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Inter', sans-serif;
+}
+
+body {
+    background: var(--bg);
+    /* Um padrão de bolinhas muito sutil, típico do brutalismo */
+    background-image: radial-gradient(#000000 1px, transparent 1px);
+    background-size: 20px 20px;
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+    font-weight: 600;
+}
+
+/* Header */
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 2rem;
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+.logo {
+    font-size: 2.2rem;
+    font-weight: 900;
+    color: var(--text);
+    letter-spacing: -1px;
+    text-transform: uppercase;
+}
+
+.logo span {
+    color: var(--accent);
+    background: var(--text);
+    padding: 0 8px;
+    margin-left: 4px;
+    border-radius: 4px;
+    transform: rotate(-3deg);
+    display: inline-block;
+}
+
+.header-info {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 1rem;
+    font-weight: 800;
+    background: var(--card-bg);
+    padding: 8px 16px;
+    border: var(--border-width) solid var(--border);
+    box-shadow: 4px 4px 0 var(--border);
+    border-radius: 8px;
+}
+
+.status-dot {
+    width: 14px;
+    height: 14px;
+    background: var(--success);
+    border: 2px solid var(--border);
+    border-radius: 0;
+    /* Quadrado brutalista */
+    animation: blink 1s step-end infinite;
+}
+
+@keyframes blink {
+    50% {
+        background: transparent;
+    }
+}
+
+/* Layout */
+.app {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-bottom: 3rem;
+}
+
+.container {
+    width: 95%;
+    max-width: 1000px;
+    display: grid;
+    grid-template-columns: 1fr 1.2fr;
+    gap: 2rem;
+    padding: 0 2rem 2rem 2rem;
+}
+
+/* Neobrutalism Card */
+.card {
+    background: var(--card-bg);
+    border: var(--border-width) solid var(--border);
+    border-radius: 12px;
+    padding: 2rem;
+    box-shadow: var(--shadow-offset) var(--shadow-offset) 0 var(--border);
+    transition: transform 0.2s;
+}
+
+.title {
+    font-size: 1.4rem;
+    font-weight: 900;
+    margin-bottom: 1.5rem;
+    color: var(--text);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    border-bottom: var(--border-width) solid var(--border);
+    padding-bottom: 0.5rem;
+    display: inline-block;
+}
+
+/* Teclado / Visor */
+.terminal {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.display {
+    background: #f0f0f0;
+    border: var(--border-width) solid var(--border);
+    height: 110px;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--text);
+    font-size: 1.2rem;
+    font-weight: 800;
+    box-shadow: inset 4px 4px 0 rgba(0, 0, 0, 0.05);
+    transition: all 0s;
+}
+
+#status-line {
+    font-size: 0.9rem;
+    margin-bottom: 5px;
+}
+
+.display.success {
+    background: var(--success);
+    color: var(--border);
+}
+
+.display.error {
+    background: var(--accent);
+    color: #fff;
+}
+
+#input-line {
+    font-size: 2rem;
+    font-weight: 900;
+    letter-spacing: 6px;
+}
+
+.keypad {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+}
+
+.key {
+    background: var(--card-bg);
+    border: var(--border-width) solid var(--border);
+    padding: 1rem;
+    border-radius: 8px;
+    color: var(--text);
+    font-size: 1.5rem;
+    font-weight: 900;
+    cursor: pointer;
+    box-shadow: 4px 4px 0 var(--border);
+    transition: all 0.1s ease;
+    user-select: none;
+    font-family: 'JetBrains Mono', monospace;
+}
+
+/* Feedback tátil essencial para o Neobrutalismo */
+.key:hover {
+    transform: translate(-2px, -2px);
+    box-shadow: 6px 6px 0 var(--border);
+}
+
+.key:active {
+    transform: translate(4px, 4px) !important;
+    box-shadow: 0 0 0 var(--border) !important;
+}
+
+.key:disabled {
+    background: #e0e0e0;
+    cursor: not-allowed;
+    transform: translate(4px, 4px);
+    box-shadow: 0 0 0 var(--border);
+}
+
+.key-enter {
+    background: var(--text);
+    color: #fff;
+    grid-column: span 2;
+    font-family: 'Inter', sans-serif;
+    font-size: 1.2rem;
+}
+
+.key-clear {
+    background: var(--accent);
+    color: #fff;
+}
+
+.type-buttons {
+    display: flex;
+    gap: 12px;
+    margin-top: 5px;
+}
+
+.btn-entrada,
+.btn-saida {
+    flex: 1;
+    font-size: 1rem;
+    font-family: 'Inter', sans-serif;
+    background: #e2e8f0;
+}
+
+.btn-entrada.active {
+    background: var(--text);
+    color: #fff;
+}
+
+.btn-saida.active {
+    background: var(--accent);
+    color: #fff;
+}
+
+/* Feed de Logs */
+.logs-section {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    max-height: 540px;
+    overflow-y: auto;
+    padding-right: 10px;
+}
+
+.log-item {
+    background: var(--card-bg);
+    padding: 1rem;
+    border: var(--border-width) solid var(--border);
+    border-radius: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 4px 4px 0 var(--border);
+}
+
+.log-item strong {
+    font-size: 1.1rem;
+    text-transform: uppercase;
+}
+
+.log-item small {
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 800;
+    color: #555;
+}
+
+.status-badge {
+    padding: 6px 12px;
+    border: 2px solid var(--border);
+    border-radius: 4px;
+    font-size: 0.8rem;
+    font-weight: 900;
+    text-transform: uppercase;
+    box-shadow: 2px 2px 0 var(--border);
+}
+
+.status-entrada {
+    background: var(--text);
+    color: #fff;
+}
+
+.status-saida {
+    background: var(--accent);
+    color: #fff;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 2rem;
+    font-size: 1rem;
+    font-weight: 800;
+    border: 2px dashed var(--border);
+    background: #f8f9fa;
+}
+
+/* Workers / Settings Panels */
+.panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    user-select: none;
+    background: #f0f0f0;
+    padding: 10px 15px;
+    border: var(--border-width) solid var(--border);
+    border-radius: 8px;
+    box-shadow: 4px 4px 0 var(--border);
+    transition: transform 0.1s;
+}
+
+.panel-header:active {
+    transform: translate(4px, 4px);
+    box-shadow: 0 0 0 var(--border);
+}
+
+.arrow {
+    font-size: 1.2rem;
+    font-weight: 900;
+    color: var(--text);
+}
+
+.workers-panel {
+    margin-top: 1.5rem;
+    border-top: var(--border-width) solid var(--border);
+    padding-top: 1.5rem;
+}
+
+.workers-panel.hidden {
+    display: none;
+}
+
+.section-title {
+    font-size: 1rem;
+    font-weight: 900;
+    text-transform: uppercase;
+    margin-bottom: 1rem;
+    background: var(--text);
+    color: #fff;
+    display: inline-block;
+    padding: 4px 8px;
+}
+
+.add-form {
+    display: grid;
+    grid-template-columns: 1fr 1.5fr 1fr auto;
+    gap: 12px;
+    margin-bottom: 2rem;
+}
+
+.add-form input {
+    background: var(--card-bg);
+    border: var(--border-width) solid var(--border);
+    border-radius: 8px;
+    padding: 12px;
+    color: var(--text);
+    font-size: 1rem;
+    font-weight: 700;
+    box-shadow: inset 2px 2px 0 rgba(0, 0, 0, 0.05);
+}
+
+.add-form input:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: inset 2px 2px 0 rgba(255, 42, 42, 0.1);
+}
+
+.btn-add {
+    background: var(--text) !important;
+    color: #fff !important;
+    font-size: 1rem !important;
+    padding: 0 20px !important;
+}
+
+.worker-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    border: var(--border-width) solid var(--border);
+    border-radius: 8px;
+    margin-bottom: 12px;
+    box-shadow: 3px 3px 0 var(--border);
+    background: #fff;
+}
+
+.btn-delete {
+    background: var(--accent) !important;
+    color: #fff !important;
+    padding: 8px 12px !important;
+    font-size: 1rem !important;
+    border-radius: 6px;
+    box-shadow: 2px 2px 0 var(--border) !important;
+}
+
+.btn-delete:active {
+    box-shadow: 0 0 0 var(--border) !important;
+}
+
+/* Catraca Buttons overrides */
+#btn-connect {
+    background: var(--text) !important;
+    color: white !important;
+}
+
+.btn-enroll {
+    background: var(--accent) !important;
+    color: white !important;
+    font-size: 0.9rem !important;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .container {
+        grid-template-columns: 1fr;
+        padding: 0 1rem 1rem 1rem;
+    }
+
+    .add-form {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .header {
+        flex-direction: column;
+        gap: 15px;
+        padding: 1.5rem;
+    }
+}
+
+/* Scrollbar brutalista */
+::-webkit-scrollbar {
+    width: 12px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--bg);
+    border-left: 2px solid var(--border);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--text);
+    border: 2px solid var(--border);
+}

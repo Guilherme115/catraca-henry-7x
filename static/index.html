@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Henry 7x - Sistema de Ponto</title>
+    <meta name="description" content="Sistema de controle de entrada e saída de alunos - Henry 7x">
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=JetBrains+Mono&display=swap"
+        rel="stylesheet">
+</head>
+
+<body>
+
+    <div class="app">
+        <!-- Header -->
+        <header class="header"
+            style="display: flex; flex-wrap: wrap; gap: 1.5rem; justify-content: space-between; align-items: center;">
+            <div
+                style="flex: 1 1 250px; min-width: 250px; max-width: 350px; display: flex; flex-direction: column; gap: 6px;">
+                <img src="logo.png" alt="Máxima Educação" style="width: 100%; height: auto; display: block;">
+                <span
+                    style="font-size:0.75rem; color:#64748b; font-weight:800; font-family:'JetBrains Mono', monospace; text-transform:uppercase; letter-spacing:0.5px; border-left:3px solid var(--accent); padding-left:6px; line-height:1.3;">Sistema
+                    de Catracas - 1ª Versão em Testes</span>
+            </div>
+            <div class="header-info" style="flex-shrink: 0; white-space: nowrap;">
+                <span id="clock"></span>
+                <span class="status-dot" id="status-dot" title="Servidor online"></span>
+            </div>
+        </header>
+
+        <div class="container">
+            <!-- Terminal Simulator -->
+            <div class="card terminal">
+                <h2 class="title">REGISTRAR PONTO</h2>
+                <div class="display" id="display">
+                    <div id="status-line">AGUARDANDO...</div>
+                    <div id="input-line"></div>
+                </div>
+                <div class="keypad">
+                    <button class="key" onclick="press('1')">1</button>
+                    <button class="key" onclick="press('2')">2</button>
+                    <button class="key" onclick="press('3')">3</button>
+                    <button class="key" onclick="press('4')">4</button>
+                    <button class="key" onclick="press('5')">5</button>
+                    <button class="key" onclick="press('6')">6</button>
+                    <button class="key" onclick="press('7')">7</button>
+                    <button class="key" onclick="press('8')">8</button>
+                    <button class="key" onclick="press('9')">9</button>
+                    <button class="key key-clear" onclick="clearInput()">C</button>
+                    <button class="key" onclick="press('0')">0</button>
+                    <button class="key key-enter" onclick="submit()" id="btn-enter">ENTER</button>
+                </div>
+                <div class="type-buttons">
+                    <button class="key btn-entrada active" id="btn-auto" onclick="setType('AUTO')">🔄 AUTO</button>
+                    <button class="key btn-entrada" id="btn-entrada" onclick="setType('ENTRADA')">⬇ ENTRADA</button>
+                    <button class="key btn-saida" id="btn-saida" onclick="setType('SAIDA')">⬆ SAÍDA</button>
+                </div>
+            </div>
+
+            <!-- History Feed -->
+            <div class="card logs-section">
+                <h2 class="title" style="font-size: 1.2rem;">REGISTROS RECENTES</h2>
+                <div style="display:flex; gap:8px; margin-bottom:1rem; flex-wrap:wrap; align-items:center;">
+                    <input type="date" id="filter-date"
+                        style="padding:8px; border:2px solid #000; border-radius:6px; font-weight:700; font-family:'JetBrains Mono',monospace;">
+                    <button class="key" onclick="filterByDate()"
+                        style="padding:8px 14px; font-size:0.9rem;">Filtrar</button>
+                    <button class="key" onclick="clearDateFilter()"
+                        style="padding:8px 14px; font-size:0.9rem;">Todos</button>
+                    <button class="key" onclick="exportCSV()"
+                        style="padding:8px 14px; font-size:0.9rem; background:#059669; color:#fff;">📥 Exportar
+                        CSV</button>
+                </div>
+                <div id="logs-container">
+                    <div class="empty-state">Nenhum registro ainda</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Painel da Catraca Real -->
+        <div class="container" style="margin-top: 0;">
+            <div class="card" style="grid-column: 1 / -1;">
+                <div class="panel-header" onclick="togglePanel('catraca')">
+                    <h2 class="title" style="font-size: 1.2rem; margin-bottom: 0;">🔌 CATRACA HENRY 7x</h2>
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <button id="btn-quick-reconnect" class="key" onclick="quickReconnect(event)"
+                            style="padding: 4px 8px; font-size: 0.8rem; background: #0ea5e9; color: #fff; display: none;"
+                            title="Tentar reconexão com último IP">🔄 Reconectar</button>
+                        <span id="catraca-status-badge" class="status-badge status-saida">DESCONECTADA</span>
+                        <span id="catraca-arrow" class="arrow">▼</span>
+                    </div>
+                </div>
+                <div id="catraca-panel" class="workers-panel hidden">
+                    <!-- Conexão -->
+                    <div class="section-title">Conexão TCP</div>
+                    <form class="add-form" onsubmit="connectCatraca(event)"
+                        style="display: flex; flex-wrap: wrap; gap: 8px;">
+                        <input type="text" id="catraca-ip" placeholder="IP da Catraca (ex: 192.168.1.100)" required
+                            style="flex: 2 1 180px;">
+                        <input type="number" id="catraca-port" placeholder="Porta" value="3000" style="flex: 1 1 80px;">
+                        <button type="button" class="key" id="btn-test" onclick="quickReconnect(event)"
+                            style="background:#0ea5e9; flex: 1 1 auto;" title="Ping TCP rápido">🔄 Testar IP</button>
+                        <button type="submit" class="key btn-add" id="btn-connect"
+                            style="flex: 1 1 auto;">Conectar</button>
+                        <button type="button" class="key btn-delete" onclick="disconnectCatraca()"
+                            style="flex: 1 1 auto;">Desconectar</button>
+                        <button type="button" class="key" onclick="syncClock()"
+                            style="background:#059669; flex: 1 1 auto;" title="Sincronizar relógio">🕐 Sync</button>
+                    </form>
+
+                    <!-- Cadastro de Digital -->
+                    <div class="section-title" style="margin-top:1.5rem;">👆 Cadastro de Digital</div>
+                    <p style="color:#94a3b8; font-size:0.85rem; margin-bottom: 1rem;">
+                        Selecione o aluno e clique em "Cadastrar Digital". O aluno deve colocar o dedo na catraca quando
+                        solicitado.
+                    </p>
+                    <div id="enroll-list"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Painel de Alunos -->
+        <div class="container" style="margin-top: 0;">
+            <div class="card" style="grid-column: 1 / -1;">
+                <div class="panel-header" onclick="togglePanel('workers')">
+                    <h2 class="title" style="font-size: 1.2rem; margin-bottom: 0;">👤 GERENCIAR ALUNOS</h2>
+                    <span id="workers-arrow" class="arrow">▼</span>
+                </div>
+                <div id="workers-panel" class="workers-panel hidden">
+                    <form id="add-worker-form" class="add-form" onsubmit="addWorker(event)">
+                        <input type="text" id="w-card" placeholder="Matrícula" required maxlength="8">
+                        <input type="text" id="w-name" placeholder="Nome do Aluno" required>
+                        <input type="text" id="w-job" placeholder="Turma (opcional)">
+                        <button type="submit" class="key btn-add">+ Cadastrar</button>
+                    </form>
+                    <div style="display:flex; gap:10px; margin-bottom:1.5rem;">
+                        <button class="key" onclick="document.getElementById('csv-file').click()"
+                            style="padding:10px 16px; font-size:0.9rem; background:#059669; color:#fff; flex:1;">📁
+                            Importar CSV</button>
+                        <input type="file" id="csv-file" accept=".csv,.txt" style="display:none"
+                            onchange="importCSV(event)">
+                    </div>
+                    <div id="workers-list"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Painel Manual de Uso -->
+        <div class="container" style="margin-top: 0;">
+            <div class="card" style="grid-column: 1 / -1; border-color: #0ea5e9; box-shadow: 4px 4px 0 #0ea5e9;">
+                <div class="panel-header" onclick="togglePanel('manual')" style="border-bottom-color: #0ea5e9;">
+                    <h2 class="title"
+                        style="font-size: 1.2rem; margin-bottom: 0; display:flex; align-items:center; gap:8px;">📖
+                        MANUAL DE INSTRUÇÕES</h2>
+                    <span id="manual-arrow" class="arrow" style="color: #0ea5e9;">▼</span>
+                </div>
+                <div id="manual-panel" class="workers-panel hidden"
+                    style="font-family: inherit; font-size: 0.95rem; line-height: 1.6; color: #1e293b; padding: 20px;">
+                    <div
+                        style="background: #f1f5f9; padding: 15px; border-left: 4px solid #0ea5e9; margin-bottom: 20px; font-weight: bold;">
+                        Bem-vindo ao Sistema de Catracas Máxima!<br>
+                        <span style="font-weight: normal;">Siga o roteiro abaixo para operar o software no seu dia a
+                            dia.</span>
+                    </div>
+
+                    <h3
+                        style="color: #0ea5e9; border-bottom: 2px solid #e2e8f0; padding-bottom: 5px; margin-top: 25px; margin-bottom:10px;">
+                        🔌 1. Conectando a Catraca</h3>
+                    <ul style="margin-left: 20px; margin-bottom: 15px;">
+                        <li>Vá no painel <strong>CATRACA HENRY 7X</strong>.</li>
+                        <li>Digite o IP da máquina e clique em <strong>Testar IP</strong>. Se funcionar, clique em
+                            <strong>Conectar</strong>. O status mudará para Verde.</li>
+                        <li><em>Dica:</em> Nas próximas vezes, use apenas o botão rápido azul de
+                            <strong>Reconectar</strong> no título do painel!</li>
+                        <li>Para acertar a hora da máquina física, clique em <strong>🕐 Sync</strong>.</li>
+                    </ul>
+
+                    <h3
+                        style="color: #0ea5e9; border-bottom: 2px solid #e2e8f0; padding-bottom: 5px; margin-top: 25px; margin-bottom:10px;">
+                        👨‍🎓 2. Cadastrando e Importando Alunos</h3>
+                    <ul style="margin-left: 20px; margin-bottom: 15px;">
+                        <li>O sistema precisa saber a lista de alunos na aba <strong>GERENCIAR ALUNOS</strong>.</li>
+                        <li><strong>Cadastro manual:</strong> Digite Matrícula, Nome e clique em "+ Cadastrar".</li>
+                        <li><strong>Importação em Lote (Excel):</strong> Salve sua planilha como CSV (Matrícula, Nome,
+                            Turma - <em>nessa ordem</em>) e clique no botão verde <strong>📁 Importar CSV</strong>. O
+                            sistema ignora os alunos já cadastrados.</li>
+                    </ul>
+
+                    <h3
+                        style="color: #0ea5e9; border-bottom: 2px solid #e2e8f0; padding-bottom: 5px; margin-top: 25px; margin-bottom:10px;">
+                        👆 3. Cadastro de Dedo (Biometria)</h3>
+                    <ul style="margin-left: 20px; margin-bottom: 15px;">
+                        <li>Com a catraca <em>Conectada</em>, selecione o nome do aluno na lista suspensa do painel
+                            "Cadastro de Digital".</li>
+                        <li>Clique no botão vermelho <strong>Cadastrar Digital</strong>.</li>
+                        <li>A catraca apitará! O aluno deve colocar o dedo no leitor óptico imediatamente. Ele ficará
+                            salvo!</li>
+                    </ul>
+
+                    <h3
+                        style="color: #0ea5e9; border-bottom: 2px solid #e2e8f0; padding-bottom: 5px; margin-top: 25px; margin-bottom:10px;">
+                        🚪 4. Entradas e Saídas (Lógica Inteligente)</h3>
+                    <ul style="margin-left: 20px; margin-bottom: 15px;">
+                        <li>O algoritmo decide sozinho o status: Se a primeira vez do dia foi ENTRADA, a próxima vez que
+                            o aluno passar o dedo será computada como SAÍDA.</li>
+                        <li><strong>Regra das 10 horas:</strong> Se o aluno entrou hoje e foi embora sem passar o dedo
+                            na saída, ele não ficará travado! Após 10 horas, o ciclo "reseta" e a próxima leitura será
+                            convertida novamente num registro de ENTRADA.</li>
+                    </ul>
+
+                    <h3
+                        style="color: #0ea5e9; border-bottom: 2px solid #e2e8f0; padding-bottom: 5px; margin-top: 25px; margin-bottom:10px;">
+                        📈 5. Relatórios e Excel</h3>
+                    <ul style="margin-left: 20px; margin-bottom: 15px;">
+                        <li>Na coluna <strong>REGISTROS RECENTES</strong>, clique no calendário e selecione um dia,
+                            depois em <strong>Filtrar</strong>.</li>
+                        <li>Para baixar a tabela inteira e abrir no seu Excel para conferência de presença/falta, clique
+                            no botão verde <strong>📥 Exportar CSV</strong>.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentInput = "";
+        let currentType = "AUTO"; // Padrão: toggle automático
+
+        // --- Relógio ---
+        function updateClock() {
+            const now = new Date();
+            document.getElementById('clock').textContent =
+                now.toLocaleDateString('pt-BR') + '  ' + now.toLocaleTimeString('pt-BR');
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        // --- Tipo ---
+        function setType(type) {
+            currentType = type;
+            // Atualizar botões
+            document.getElementById('btn-auto').classList.toggle('active', type === 'AUTO');
+            document.getElementById('btn-entrada').classList.toggle('active', type === 'ENTRADA');
+            document.getElementById('btn-saida').classList.toggle('active', type === 'SAIDA');
+            const labels = { 'AUTO': '🔄 AUTO (Inteligente)', 'ENTRADA': 'MODO: ENTRADA FORÇADA', 'SAIDA': 'MODO: SAÍDA FORÇADA' };
+            document.getElementById('status-line').innerText = labels[type] || type;
+        }
+
+        // --- Teclado ---
+        function press(num) {
+            if (currentInput.length < 8) {
+                currentInput += num;
+                updateDisplay();
+            }
+        }
+        function clearInput() {
+            currentInput = "";
+            updateDisplay();
+        }
+        function updateDisplay() {
+            document.getElementById('input-line').innerText = currentInput;
+        }
+
+        // Teclado físico
+        document.addEventListener('keydown', (e) => {
+            if (e.target.tagName === 'INPUT') return;
+            if (e.key >= '0' && e.key <= '9') press(e.key);
+            if (e.key === 'Enter') submit();
+            if (e.key === 'Escape' || e.key === 'c' || e.key === 'C') clearInput();
+        });
+
+        // --- Submit ---
+        async function submit() {
+            if (currentInput === "") return;
+            const btn = document.getElementById('btn-enter');
+            btn.disabled = true;
+            try {
+                const response = await fetch('/api/punch', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ card_id: currentInput, type: currentType })
+                });
+                const result = await response.json();
+                if (response.ok) {
+                    const tipo = result.applied_type || '';
+                    const emoji = tipo === 'ENTRADA' ? '✅ ENTRANDO' : '👋 SAINDO';
+                    document.getElementById('status-line').innerText = emoji + ' — ' + result.worker;
+                    document.getElementById('display').classList.add('success');
+                    setTimeout(() => {
+                        document.getElementById('display').classList.remove('success');
+                        document.getElementById('status-line').innerText = currentType === 'AUTO' ? '🔄 AUTO (Inteligente)' : 'MODO: ' + currentType;
+                    }, 2500);
+                } else {
+                    document.getElementById('status-line').innerText = "❌ " + (result.error || "ERRO");
+                    document.getElementById('display').classList.add('error');
+                    setTimeout(() => {
+                        document.getElementById('display').classList.remove('error');
+                        setType(currentType);
+                    }, 2000);
+                }
+            } catch (err) {
+                document.getElementById('status-line').innerText = "⚠ SEM CONEXÃO";
+            }
+            currentInput = "";
+            updateDisplay();
+            btn.disabled = false;
+            loadLogs();
+        }
+
+        // --- Logs ---
+        async function loadLogs() {
+            try {
+                const response = await fetch('/api/logs?limit=15');
+                if (!response.ok) throw new Error('Erro HTTP');
+                const logs = await response.json();
+                const container = document.getElementById('logs-container');
+                if (!logs || logs.length === 0) {
+                    container.innerHTML = '<div class="empty-state">Nenhum registro ainda</div>';
+                    return;
+                }
+                container.innerHTML = "";
+                logs.forEach(log => {
+                    const date = new Date(log.timestamp).toLocaleTimeString('pt-BR');
+                    const div = document.createElement('div');
+                    div.className = 'log-item';
+                    div.innerHTML = `
+                        <div>
+                            <strong style="display:block">${log.worker?.name || 'Desconhecido'}</strong>
+                            <small style="color: #94a3b8">${date}</small>
+                        </div>
+                        <span class="status-badge status-${log.type.toLowerCase()}">${log.type}</span>
+                    `;
+                    container.appendChild(div);
+                });
+            } catch (err) {
+                console.error("Erro ao carregar logs:", err);
+            }
+        }
+
+        // --- Painéis colapsáveis ---
+        function togglePanel(name) {
+            const panel = document.getElementById(name + '-panel');
+            const arrow = document.getElementById(name + '-arrow');
+            panel.classList.toggle('hidden');
+            arrow.textContent = panel.classList.contains('hidden') ? '▼' : '▲';
+            if (name === 'workers' && !panel.classList.contains('hidden')) loadWorkers();
+            if (name === 'catraca' && !panel.classList.contains('hidden')) {
+                loadCatracaStatus();
+                loadEnrollList();
+            }
+        }
+
+        // --- Workers (Alunos) ---
+        async function loadWorkers() {
+            try {
+                const response = await fetch('/api/workers');
+                if (!response.ok) throw new Error('Erro');
+                const workers = await response.json();
+                const container = document.getElementById('workers-list');
+                if (!workers || workers.length === 0) {
+                    container.innerHTML = '<div class="empty-state">Nenhum aluno cadastrado</div>';
+                    return;
+                }
+                container.innerHTML = "";
+                workers.forEach(w => {
+                    const div = document.createElement('div');
+                    div.className = 'worker-item';
+                    div.innerHTML = `
+                        <div>
+                            <strong>${w.name}</strong>
+                            <small style="color:#94a3b8"> — ${w.card_id} ${w.job_title ? '(' + w.job_title + ')' : ''}</small>
+                        </div>
+                        <button class="key btn-delete" onclick="deleteWorker(${w.id})">✕</button>
+                    `;
+                    container.appendChild(div);
+                });
+            } catch (err) {
+                console.error("Erro ao carregar alunos:", err);
+            }
+        }
+
+        async function addWorker(e) {
+            e.preventDefault();
+            const card = document.getElementById('w-card').value.trim();
+            const name = document.getElementById('w-name').value.trim();
+            const job = document.getElementById('w-job').value.trim();
+            try {
+                const response = await fetch('/api/workers', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ card_id: card, name: name, job_title: job })
+                });
+                if (response.ok) {
+                    document.getElementById('add-worker-form').reset();
+                    loadWorkers();
+                    loadEnrollList();
+                } else {
+                    const err = await response.json();
+                    alert(err.error || "Erro ao cadastrar");
+                }
+            } catch (err) {
+                alert("Sem conexão com o servidor");
+            }
+        }
+
+        async function deleteWorker(id) {
+            if (!confirm("Remover este aluno?")) return;
+            try {
+                await fetch('/api/workers/' + id, { method: 'DELETE' });
+                loadWorkers();
+                loadEnrollList();
+            } catch (err) {
+                alert("Erro ao remover");
+            }
+        }
+
+        // --- Catraca Real ---
+        async function loadCatracaStatus() {
+            try {
+                const res = await fetch('/api/catraca/status');
+                const status = await res.json();
+                const badge = document.getElementById('catraca-status-badge');
+                const dot = document.getElementById('status-dot');
+                const btnReconnect = document.getElementById('btn-quick-reconnect');
+
+                if (status.connected) {
+                    badge.className = 'status-badge status-entrada';
+                    badge.textContent = 'CONECTADA';
+                    dot.title = 'Catraca conectada';
+                    btnReconnect.style.display = 'none';
+                } else {
+                    badge.className = 'status-badge status-saida';
+                    badge.textContent = 'DESCONECTADA';
+                    dot.title = 'Catraca desconectada';
+                    // Mostra o botão de reconexão se tivermos um IP (mesmo que do status anterior)
+                    if (document.getElementById('catraca-ip').value) {
+                        btnReconnect.style.display = 'inline-block';
+                    }
+                }
+                if (status.ip) document.getElementById('catraca-ip').value = status.ip;
+                if (status.port) document.getElementById('catraca-port').value = status.port;
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        async function quickReconnect(e) {
+            e.stopPropagation(); // Evita abrir o painel
+            const ip = document.getElementById('catraca-ip').value.trim();
+            const port = parseInt(document.getElementById('catraca-port').value) || 3000;
+
+            if (!ip) {
+                alert("Preencha o IP da catraca no painel primeiro.");
+                return;
+            }
+
+            const btn = document.getElementById('btn-quick-reconnect');
+            btn.disabled = true;
+            btn.textContent = '⏳...';
+
+            try {
+                const res = await fetch('/api/catraca/connect', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ip, port })
+                });
+                const result = await res.json();
+                if (res.ok) {
+                    alert('✅ ' + result.message);
+                } else {
+                    alert('❌ ' + (result.error || 'Falha ao conectar'));
+                }
+                loadCatracaStatus();
+            } catch (err) {
+                alert('⚠ Erro de rede');
+            }
+
+            btn.disabled = false;
+            btn.textContent = '🔄 Reconectar';
+        }
+
+        async function connectCatraca(e) {
+            e.preventDefault();
+            const ip = document.getElementById('catraca-ip').value.trim();
+            const port = parseInt(document.getElementById('catraca-port').value) || 3000;
+            const btn = document.getElementById('btn-connect');
+            btn.disabled = true;
+            btn.textContent = 'Conectando...';
+            try {
+                const res = await fetch('/api/catraca/connect', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ip, port })
+                });
+                const result = await res.json();
+                if (res.ok) {
+                    alert('✅ ' + result.message);
+                } else {
+                    alert('❌ ' + (result.error || 'Falha ao conectar'));
+                }
+                loadCatracaStatus();
+            } catch (err) {
+                alert('⚠ Erro de rede');
+            }
+            btn.disabled = false;
+            btn.textContent = 'Conectar';
+        }
+
+        async function disconnectCatraca() {
+            try {
+                await fetch('/api/catraca/disconnect', { method: 'POST' });
+                loadCatracaStatus();
+            } catch (err) {
+                alert('Erro');
+            }
+        }
+
+        async function syncClock() {
+            try {
+                const res = await fetch('/api/catraca/sync-clock', { method: 'POST' });
+                const result = await res.json();
+                alert(res.ok ? '🕐 ' + result.message : '❌ ' + result.error);
+            } catch (err) {
+                alert('⚠ Catraca não conectada');
+            }
+        }
+
+        // --- Cadastro de Digital ---
+        async function loadEnrollList() {
+            try {
+                const res = await fetch('/api/workers');
+                const workers = await res.json();
+                const container = document.getElementById('enroll-list');
+                if (!workers || workers.length === 0) {
+                    container.innerHTML = '<div class="empty-state">Cadastre alunos primeiro para poder registrar digitais</div>';
+                    return;
+                }
+                container.innerHTML = "";
+                workers.forEach(w => {
+                    const div = document.createElement('div');
+                    div.className = 'worker-item';
+                    div.innerHTML = `
+                        <div>
+                            <strong>${w.name}</strong>
+                            <small style="color:#94a3b8"> — Matrícula: ${w.card_id}</small>
+                        </div>
+                        <button class="key btn-enroll" onclick="enrollFingerprint('${w.card_id}', '${w.name}')">
+                            👆 Cadastrar Digital
+                        </button>
+                    `;
+                    container.appendChild(div);
+                });
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        async function enrollFingerprint(cardId, name) {
+            if (!confirm(`Iniciar cadastro de digital para ${name} (${cardId})?\n\nO aluno deverá colocar o dedo na catraca quando solicitado.`)) return;
+            try {
+                const res = await fetch('/api/catraca/enroll', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ card_id: cardId })
+                });
+                const result = await res.json();
+                if (res.ok) {
+                    alert('👆 ' + result.message);
+                } else {
+                    alert('❌ ' + (result.error || 'Erro'));
+                }
+            } catch (err) {
+                alert('⚠ Sem conexão');
+            }
+        }
+
+        // --- Init ---
+        loadLogs();
+        setInterval(loadLogs, 5000);
+        setInterval(loadCatracaStatus, 10000);
+
+        // --- Filtro de Data ---
+        let activeDateFilter = '';
+
+        function filterByDate() {
+            const date = document.getElementById('filter-date').value;
+            if (!date) { alert('Selecione uma data'); return; }
+            activeDateFilter = date;
+            loadLogs();
+        }
+
+        function clearDateFilter() {
+            activeDateFilter = '';
+            document.getElementById('filter-date').value = '';
+            loadLogs();
+        }
+
+        // Override loadLogs para suportar filtro
+        const _origLoadLogs = loadLogs;
+        loadLogs = async function () {
+            try {
+                let url = '/api/logs?limit=30';
+                if (activeDateFilter) url = '/api/logs?date=' + activeDateFilter;
+                const response = await fetch(url);
+                if (!response.ok) throw new Error('Erro HTTP');
+                const logs = await response.json();
+                const container = document.getElementById('logs-container');
+                if (!logs || logs.length === 0) {
+                    container.innerHTML = '<div class="empty-state">Nenhum registro encontrado</div>';
+                    return;
+                }
+                container.innerHTML = "";
+                logs.forEach(log => {
+                    const date = new Date(log.timestamp);
+                    const timeStr = date.toLocaleTimeString('pt-BR');
+                    const dateStr = date.toLocaleDateString('pt-BR');
+                    const div = document.createElement('div');
+                    div.className = 'log-item';
+                    div.innerHTML = `
+                        <div>
+                            <strong style="display:block">${log.worker?.name || 'Desconhecido'}</strong>
+                            <small>${activeDateFilter ? dateStr + ' ' : ''}${timeStr}</small>
+                        </div>
+                        <span class="status-badge status-${log.type.toLowerCase()}">${log.type}</span>
+                    `;
+                    container.appendChild(div);
+                });
+            } catch (err) {
+                console.error("Erro ao carregar logs:", err);
+            }
+        };
+
+        // --- Exportar CSV ---
+        function exportCSV() {
+            const date = document.getElementById('filter-date').value || new Date().toISOString().split('T')[0];
+            window.open(`/api/export?format=csv&start=${date}&end=${date}`, '_blank');
+        }
+
+        // --- Importar CSV ---
+        async function importCSV(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const text = await file.text();
+            try {
+                const res = await fetch('/api/workers/import', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ csv: text })
+                });
+                const result = await res.json();
+                if (res.ok) {
+                    alert('✅ ' + result.message);
+                    loadWorkers();
+                    loadEnrollList();
+                } else {
+                    alert('❌ ' + (result.error || 'Erro'));
+                }
+            } catch (err) {
+                alert('⚠ Sem conexão');
+            }
+            event.target.value = ''; // Limpar input
+        }
+    </script>
+</body>
+
+</html>
