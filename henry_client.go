@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"net"
 	"strings"
@@ -87,6 +88,9 @@ func (h *HenryClient) Disconnect() {
 
 // Status retorna o status atual da conexão
 func (h *HenryClient) Status() CatracaStatus {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+
 	return CatracaStatus{
 		Connected: h.connected,
 		IP:        h.IP,
@@ -95,47 +99,114 @@ func (h *HenryClient) Status() CatracaStatus {
 	}
 }
 
+// IsConnected informa se a conexão com a catraca está ativa.
+func (h *HenryClient) IsConnected() bool {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	return h.connected && h.conn != nil
+}
+
 // Listen escuta eventos da catraca (bloqueante — rodar em goroutine)
 func (h *HenryClient) Listen() {
+	h.mu.Lock()
 	h.listening = true
+	h.mu.Unlock()
 	fmt.Println("👂 [HENRY CLIENT] Escutando eventos da catraca...")
 
 	buf := make([]byte, 1024)
-	for h.listening {
+	stream := make([]byte, 0, 2048)
+	for h.isListening() {
 		if err := h.Connect(); err != nil {
 			fmt.Printf("⚠️  [HENRY CLIENT] Reconectando em 5s: %v\n", err)
 			time.Sleep(5 * time.Second)
 			continue
 		}
 
-		h.conn.SetReadDeadline(time.Now().Add(30 * time.Second))
-		n, err := h.conn.Read(buf)
+		h.mu.Lock()
+		conn := h.conn
+		h.mu.Unlock()
+		if conn == nil {
+			time.Sleep(1 * time.Second)
+			continue
+		}
+
+		conn.SetReadDeadline(time.Now().Add(30 * time.Second))
+		n, err := conn.Read(buf)
 		if err != nil {
 			if netErr, ok := err.(net.Error); ok && netErr.Timeout() {
 				continue // timeout normal, tenta de novo
 			}
 			fmt.Printf("⚠️  [HENRY CLIENT] Erro de leitura: %v\n", err)
-			h.mu.Lock()
-			h.connected = false
-			h.conn = nil
-			h.mu.Unlock()
+			h.resetConnection()
 			time.Sleep(2 * time.Second)
 			continue
 		}
 
-		data := buf[:n]
-		event := h.parseResponse(data)
-		if event != nil {
-			fmt.Printf("📨 [HENRY CLIENT] Evento: Cmd=%s Data=%s\n", event.Command, event.Data)
+		stream = append(stream, buf[:n]...)
+		frames, tail := extractHenryFrames(stream)
+		stream = tail
 
-			// Se for evento de passagem de cartão (REON), processar automaticamente
-			if event.Command == "REON" || event.Command == "EMSG" {
-				h.processCardEvent(event)
-			}
+		for _, frame := range frames {
+			event := h.parseResponse(frame)
+			if event != nil {
+				fmt.Printf("📨 [HENRY CLIENT] Evento: Cmd=%s Data=%s\n", event.Command, event.Data)
 
-			if h.OnEvent != nil {
-				h.OnEvent(*event)
+				// Somente REON deve acionar lógica de ponto.
+				if event.Command == "REON" {
+					h.processCardEvent(event)
+				}
+
+				if h.OnEvent != nil {
+					h.OnEvent(*event)
+				}
 			}
+		}
+	}
+}
+
+func (h *HenryClient) isListening() bool {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	return h.listening
+}
+
+func (h *HenryClient) resetConnection() {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	if h.conn != nil {
+		h.conn.Close()
+	}
+	h.conn = nil
+	h.connected = false
+}
+
+func extractHenryFrames(stream []byte) ([][]byte, []byte) {
+	frames := make([][]byte, 0)
+	cursor := 0
+
+	for {
+		start := bytes.IndexByte(stream[cursor:], STX)
+		if start == -1 {
+			if len(stream) > 4096 {
+				return frames, nil
+			}
+			return frames, stream
+		}
+		start += cursor
+
+		end := bytes.IndexByte(stream[start+1:], ETX)
+		if end == -1 {
+			return frames, stream[start:]
+		}
+		end += start + 1
+
+		frame := make([]byte, end-start+1)
+		copy(frame, stream[start:end+1])
+		frames = append(frames, frame)
+		cursor = end + 1
+
+		if cursor >= len(stream) {
+			return frames, nil
 		}
 	}
 }
@@ -220,9 +291,16 @@ func (h *HenryClient) Send(index, payload string) error {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 
+	if h.conn == nil {
+		h.connected = false
+		return fmt.Errorf("conexão indisponível")
+	}
+
 	_, err := h.conn.Write(msg)
 	if err != nil {
 		h.connected = false
+		h.conn.Close()
+		h.conn = nil
 		return fmt.Errorf("erro ao enviar: %v", err)
 	}
 	return nil
@@ -244,7 +322,7 @@ func (h *HenryClient) ImpedirEntrada(index, mensagem string) error {
 
 // LiberarEntrada libera a catraca independente de evento (pré-escuta)
 func (h *HenryClient) LiberarEntrada(mensagem string) error {
-	payload := fmt.Sprintf("REON+00+4]40]%s]}1", mensagem)
+	payload := fmt.Sprintf("REON+00+4]40]%s]1", mensagem)
 	return h.Send("00", payload)
 }
 

@@ -21,8 +21,11 @@ func main() {
 	// Inicializar Cliente Henry (sem conectar ainda — o usuário configura o IP)
 	henryClient = NewHenryClient("", 3000)
 
-	// Iniciar Simulador Henry em Background (para testes locais)
-	go StartHenrySimulator()
+	// Iniciar simulador apenas quando explicitamente habilitado.
+	if os.Getenv("HENRY_SIMULATOR") == "1" {
+		go StartHenrySimulator()
+		fmt.Println("🧪 Simulador Henry habilitado (HENRY_SIMULATOR=1)")
+	}
 
 	// Mux customizado
 	mux := http.NewServeMux()
@@ -282,7 +285,7 @@ func handleCatracaConnect(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Desconectar se já estiver conectado
-	if henryClient != nil && henryClient.connected {
+	if henryClient != nil && henryClient.IsConnected() {
 		henryClient.Disconnect()
 	}
 
@@ -347,7 +350,7 @@ func handleCatracaEnroll(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if henryClient == nil || !henryClient.connected {
+	if henryClient == nil || !henryClient.IsConnected() {
 		jsonError(w, http.StatusServiceUnavailable, "Catraca não conectada. Configure o IP primeiro.")
 		return
 	}
@@ -369,7 +372,7 @@ func handleCatracaSyncClock(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if henryClient == nil || !henryClient.connected {
+	if henryClient == nil || !henryClient.IsConnected() {
 		jsonError(w, http.StatusServiceUnavailable, "Catraca não conectada")
 		return
 	}
@@ -389,7 +392,7 @@ func handleCatracaRelease(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if henryClient == nil || !henryClient.connected {
+	if henryClient == nil || !henryClient.IsConnected() {
 		jsonError(w, http.StatusServiceUnavailable, "Catraca não conectada")
 		return
 	}

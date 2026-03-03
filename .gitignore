@@ -1,0 +1,6 @@
+catraca.db*
+catraca.exe*
+*.exe
+*.shm
+*.wal
+*.exe~
