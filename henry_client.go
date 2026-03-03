@@ -358,6 +358,18 @@ func (h *HenryClient) CadastrarDigital(cardID string) error {
 	return nil
 }
 
+// BipTeste envia um comando de mensagem para testar resposta da catraca.
+// Em alguns firmwares isso gera bip/alerta sonoro.
+func (h *HenryClient) BipTeste(msg string) error {
+	msg = strings.TrimSpace(msg)
+	if msg == "" {
+		msg = "TESTE COMUNICACAO"
+	}
+	msg = strings.ReplaceAll(msg, "+", " ")
+	payload := fmt.Sprintf("EMSG+00+%s]1", msg)
+	return h.Send("00", payload)
+}
+
 // SetDateTime sincroniza o relógio da catraca com o horário local
 func (h *HenryClient) SetDateTime() error {
 	now := time.Now()

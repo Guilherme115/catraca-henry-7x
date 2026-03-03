@@ -108,6 +108,9 @@
                             style="flex: 1 1 auto;">Desconectar</button>
                         <button type="button" class="key" onclick="syncClock()"
                             style="background:#059669; flex: 1 1 auto;" title="Sincronizar relógio">🕐 Sync</button>
+                        <button type="button" class="key" onclick="beepTest()"
+                            style="background:#f59e0b; color:#111; flex: 1 1 auto;" title="Enviar bip de teste">🔊 Bip
+                            Teste</button>
                     </form>
 
                     <!-- Cadastro de Digital -->
@@ -522,6 +525,20 @@
                 const res = await fetch('/api/catraca/sync-clock', { method: 'POST' });
                 const result = await res.json();
                 alert(res.ok ? '🕐 ' + result.message : '❌ ' + result.error);
+            } catch (err) {
+                alert('⚠ Catraca não conectada');
+            }
+        }
+
+        async function beepTest() {
+            try {
+                const res = await fetch('/api/catraca/beep', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: 'TESTE COMUNICACAO' })
+                });
+                const result = await res.json();
+                alert(res.ok ? '🔊 ' + result.message : '❌ ' + result.error);
             } catch (err) {
                 alert('⚠ Catraca não conectada');
             }

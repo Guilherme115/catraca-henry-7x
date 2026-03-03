@@ -53,6 +53,7 @@ func main() {
 	mux.HandleFunc("/api/catraca/enroll", handleCatracaEnroll)
 	mux.HandleFunc("/api/catraca/sync-clock", handleCatracaSyncClock)
 	mux.HandleFunc("/api/catraca/release", handleCatracaRelease)
+	mux.HandleFunc("/api/catraca/beep", handleCatracaBeep)
 
 	server := &http.Server{
 		Addr:         ":8082",
@@ -404,6 +405,30 @@ func handleCatracaRelease(w http.ResponseWriter, r *http.Request) {
 	}
 
 	jsonResponse(w, http.StatusOK, map[string]string{"message": "Catraca liberada"})
+}
+
+func handleCatracaBeep(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		jsonError(w, http.StatusMethodNotAllowed, "Método não permitido")
+		return
+	}
+
+	if henryClient == nil || !henryClient.IsConnected() {
+		jsonError(w, http.StatusServiceUnavailable, "Catraca não conectada")
+		return
+	}
+
+	var data struct {
+		Message string `json:"message"`
+	}
+	_ = json.NewDecoder(r.Body).Decode(&data)
+
+	if err := henryClient.BipTeste(data.Message); err != nil {
+		jsonError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	jsonResponse(w, http.StatusOK, map[string]string{"message": "Comando de bip enviado para a catraca"})
 }
 
 // --- Import CSV ---
