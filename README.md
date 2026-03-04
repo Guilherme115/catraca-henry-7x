@@ -12,7 +12,7 @@ Este sistema foi desenvolvido utilizando **Go (Golang)**. A principal razão par
 2. Abra o terminal na pasta do projeto (`c:\catraca`).
 3. Execute o comando:
    ```bash
-   go run .
+   go run ./cmd/catraca
    ```
 4. Acesse o painel pelo navegador em: **`http://localhost:8082`**
 
@@ -55,7 +55,7 @@ Caso você não tenha a catraca do lado e queira me ajudar a achar os bugs na in
 1. No terminal Command Prompt/PowerShell, ative o simulador e rode o app:
    ```powershell
    $env:HENRY_SIMULATOR="1"
-   go run .
+   go run ./cmd/catraca
    ```
 2. No painel web (`http://localhost:8082`), vá na seção da catraca e digite `localhost` e porta `3000`. O sistema vai conversar com ele mesmo usando as regras do protocolo.
 
