@@ -180,15 +180,15 @@ func extractHenryFrames(stream []byte) ([][]byte, []byte) {
 	for {
 		start := bytes.IndexByte(stream[cursor:], STX)
 		if start == -1 {
-			if len(stream) > 4096 {
-				return frames, nil
-			}
-			return frames, stream
+			// If no more STX is found, but we haven't processed the whole stream,
+			// what remains is garbage. Discard it.
+			return frames, nil
 		}
 		start += cursor
 
 		end := bytes.IndexByte(stream[start+1:], ETX)
 		if end == -1 {
+			// Incomplete frame. Return what we have from STX onwards.
 			return frames, stream[start:]
 		}
 		end += start + 1

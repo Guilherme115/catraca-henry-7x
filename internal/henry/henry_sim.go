@@ -154,9 +154,12 @@ func henryChecksum(data []byte) byte {
 
 func buildHenryMessage(index string, payload string) []byte {
 	data := index + "+" + payload
-	size := byte(len(data))
+	size := len(data)
 
-	inner := append([]byte{size, 0x00}, []byte(data)...)
+	sizeLSB := byte(size & 0xFF)
+	sizeMSB := byte((size >> 8) & 0xFF)
+
+	inner := append([]byte{sizeLSB, sizeMSB}, []byte(data)...)
 	cs := henryChecksum(inner)
 
 	msg := []byte{STX}
