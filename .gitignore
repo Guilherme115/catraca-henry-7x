@@ -4,3 +4,7 @@ catraca.exe*
 *.shm
 *.wal
 *.exe~
+catraca
+*.log
+*.db-shm
+*.db-wal
